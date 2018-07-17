@@ -1,0 +1,64 @@
+{
+  "animationEnabled": false,
+  "motionEnabled": false,
+  "motionTimeout": 15,
+  "frames": [
+    {
+      "duration": 100,
+      "leds": [
+        {
+          "position": {
+            "x": 67,
+            "y": 0
+          },
+          "enabled": false,
+          "duty": 100,
+          "colorConfig": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+          }
+        },
+        {
+          "position": {
+            "x": 67,
+            "y": 2
+          },
+          "enabled": false,
+          "duty": 100,
+          "colorConfig": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+          }
+        },
+        {
+          "position": {
+            "x": 68,
+            "y": 0
+          },
+          "enabled": false,
+          "duty": 100,
+          "colorConfig": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+          }
+        },
+        {
+          "position": {
+            "x": 68,
+            "y": 1
+          },
+          "enabled": true,
+          "duty": 100,
+          "colorConfig": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+          }
+        }
+      ]
+    }
+  ]
+}
