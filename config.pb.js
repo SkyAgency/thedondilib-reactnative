@@ -996,6 +996,7 @@
              * @property {boolean} animationEnabled Config animationEnabled
              * @property {boolean} motionEnabled Config motionEnabled
              * @property {number} motionTimeout Config motionTimeout
+             * @property {number} deviceBrightness Config deviceBrightness
              * @property {Array.<sign.ILedFrame>|null} [frames] Config frames
              * @property {Uint8Array|null} [_unused] Config _unused
              */
@@ -1041,6 +1042,14 @@
             Config.prototype.motionTimeout = 30;
     
             /**
+             * Config deviceBrightness.
+             * @member {number} deviceBrightness
+             * @memberof sign.Config
+             * @instance
+             */
+            Config.prototype.deviceBrightness = 100;
+    
+            /**
              * Config frames.
              * @member {Array.<sign.ILedFrame>} frames
              * @memberof sign.Config
@@ -1083,11 +1092,12 @@
                 writer.uint32(/* id 1, wireType 0 =*/8).bool(message.animationEnabled);
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.motionEnabled);
                 writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.motionTimeout);
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.deviceBrightness);
                 if (message.frames != null && message.frames.length)
                     for (var i = 0; i < message.frames.length; ++i)
-                        $root.sign.LedFrame.encode(message.frames[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                        $root.sign.LedFrame.encode(message.frames[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
                 if (message._unused != null && message.hasOwnProperty("_unused"))
-                    writer.uint32(/* id 5, wireType 2 =*/42).bytes(message._unused);
+                    writer.uint32(/* id 6, wireType 2 =*/50).bytes(message._unused);
                 return writer;
             };
     
@@ -1132,11 +1142,14 @@
                         message.motionTimeout = reader.uint32();
                         break;
                     case 4:
+                        message.deviceBrightness = reader.uint32();
+                        break;
+                    case 5:
                         if (!(message.frames && message.frames.length))
                             message.frames = [];
                         message.frames.push($root.sign.LedFrame.decode(reader, reader.uint32()));
                         break;
-                    case 5:
+                    case 6:
                         message._unused = reader.bytes();
                         break;
                     default:
@@ -1150,6 +1163,8 @@
                     throw $util.ProtocolError("missing required 'motionEnabled'", { instance: message });
                 if (!message.hasOwnProperty("motionTimeout"))
                     throw $util.ProtocolError("missing required 'motionTimeout'", { instance: message });
+                if (!message.hasOwnProperty("deviceBrightness"))
+                    throw $util.ProtocolError("missing required 'deviceBrightness'", { instance: message });
                 return message;
             };
     
@@ -1186,6 +1201,8 @@
                     return "motionEnabled: boolean expected";
                 if (!$util.isInteger(message.motionTimeout))
                     return "motionTimeout: integer expected";
+                if (!$util.isInteger(message.deviceBrightness))
+                    return "deviceBrightness: integer expected";
                 if (message.frames != null && message.hasOwnProperty("frames")) {
                     if (!Array.isArray(message.frames))
                         return "frames: array expected";
@@ -1219,6 +1236,8 @@
                     message.motionEnabled = Boolean(object.motionEnabled);
                 if (object.motionTimeout != null)
                     message.motionTimeout = object.motionTimeout >>> 0;
+                if (object.deviceBrightness != null)
+                    message.deviceBrightness = object.deviceBrightness >>> 0;
                 if (object.frames) {
                     if (!Array.isArray(object.frames))
                         throw TypeError(".sign.Config.frames: array expected");
@@ -1256,6 +1275,7 @@
                     object.animationEnabled = false;
                     object.motionEnabled = true;
                     object.motionTimeout = 30;
+                    object.deviceBrightness = 100;
                     object._unused = options.bytes === String ? "" : [];
                 }
                 if (message.animationEnabled != null && message.hasOwnProperty("animationEnabled"))
@@ -1264,6 +1284,8 @@
                     object.motionEnabled = message.motionEnabled;
                 if (message.motionTimeout != null && message.hasOwnProperty("motionTimeout"))
                     object.motionTimeout = message.motionTimeout;
+                if (message.deviceBrightness != null && message.hasOwnProperty("deviceBrightness"))
+                    object.deviceBrightness = message.deviceBrightness;
                 if (message.frames && message.frames.length) {
                     object.frames = [];
                     for (var j = 0; j < message.frames.length; ++j)

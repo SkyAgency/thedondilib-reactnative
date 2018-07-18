@@ -43,7 +43,7 @@ const batUUID = "00002a19-0000-1000-8000-00805f9b34fb";
 // Bluetooth Transfer stuff
 const ble_config_tx_start = new Uint8Array([0xaa, 0xaa]);
 const ble_config_tx_end = new Uint8Array([0x5a, 0xa5]);
-const ble_config_chunk_size = 14;
+const ble_config_chunk_size = 128;
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -68,7 +68,8 @@ export default class App extends Component<Props> {
         model: "",
         serial: "",
         version: ""
-      }
+      },
+      connected: false
     };
     this.device = null;
     this.payload = null;
@@ -89,7 +90,10 @@ export default class App extends Component<Props> {
       // console.log(device);
 
       //TODO: Connect if it contains the important information we need.
-      if (device.localName != null) {
+      if (
+        device.localName != null &&
+        device.localName.indexOf(" Light") !== -1
+      ) {
         // console.log(device);
 
         this.manager.stopDeviceScan();
@@ -98,6 +102,8 @@ export default class App extends Component<Props> {
         this.device = device;
 
         // Then connect
+        // TODO: clean this up a bit
+        // TODO: Subscribe to battery notifications
         this.device
           .connect()
           .then(device => {
@@ -106,54 +112,66 @@ export default class App extends Component<Props> {
             return device.discoverAllServicesAndCharacteristics();
           })
           .then(device => {
-            services = device.services().then(services => {
-              // console.log(services);
-              temp = {};
+            return device.services();
+          })
+          .then(services => {
+            // console.log(services);
+            temp = {};
 
-              //TODO: validate that the device has all the necessary items to connect
+            //TODO: validate that the device has all the necessary items to connect
 
-              services.forEach((service, i) => {
-                service.characteristics().then(chars => {
-                  chars.forEach((char, i) => {
-                    // console.log(char);
+            services.forEach((service, i) => {
+              service.characteristics().then(chars => {
+                chars.forEach((char, i) => {
+                  // console.log(char);
 
-                    // If we have a config char set it up
-                    if (char.uuid == confUUID) {
-                      console.log("retrieving config char");
-                      this.setState({ device: { config: char } });
-                    }
+                  // If we have a config char set it up
+                  if (char.uuid == confUUID) {
+                    console.log("retrieving config char");
+                    this.setState({ device: { config: char } });
+                  }
 
-                    if (char.isReadable) {
-                      char.read().then(resp => {
-                        if (resp.value) {
-                          switch (char.uuid) {
-                            case manufacturerUUID:
+                  if (char.isReadable) {
+                    char.read().then(resp => {
+                      if (resp.value) {
+                        switch (char.uuid) {
+                          case manufacturerUUID:
+                            if (atob(resp.value) == "Circuit Dojo") {
                               temp.manufacturer = atob(resp.value);
-                              break;
-                            case modelUUID:
-                              temp.model = atob(resp.value);
-                              break;
-                            case serialUUID:
-                              temp.serial = atob(resp.value);
-                              break;
-                            case versionUUID:
-                              temp.version = atob(resp.value);
-                              break;
-                            default:
-                          }
+                            } else {
+                              // Disconnect and get out of here if the MFR is not us
+                              device.disconnect();
+                              return;
+                            }
 
-                          // console.log(atob(resp.value));
-                          this.setState({
-                            deviceInfo: temp
-                          });
+                            break;
+                          case modelUUID:
+                            temp.model = atob(resp.value);
+                            break;
+                          case serialUUID:
+                            // TODO: Check local cache to see if the serial has
+                            // already been checked
+                            // TODO: if not, validate serial with web backend.=
+                            // TODO: save validated results to file.
+                            temp.serial = atob(resp.value);
+                            break;
+                          case versionUUID:
+                            temp.version = atob(resp.value);
+                            break;
+                          default:
                         }
-                      });
-                    }
-                  });
+
+                        // console.log(atob(resp.value));
+                        this.setState({
+                          deviceInfo: temp
+                        });
+                      }
+                    });
+                  }
                 });
               });
-              this.info("Services found");
             });
+            this.info("Services found");
           });
       }
 
@@ -321,6 +339,7 @@ export default class App extends Component<Props> {
         <Text style={styles.instructions}>
           {JSON.stringify(this.state.config)}
         </Text>
+        <Button onPress={this._onButtonPressed} title="Send Config" />
       </View>
     );
   }
