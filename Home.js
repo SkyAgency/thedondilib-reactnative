@@ -13,14 +13,17 @@ import {
   ScrollView,
   TouchableHighlight,
   Modal,
-  Share
+  Share,
+  Dimensions
 } from "react-native";
 import { BleManager } from "react-native-ble-plx";
 import { createStackNavigator } from "react-navigation";
 import Icon from "react-native-vector-icons/FontAwesome";
 import SplashScreen from "react-native-splash-screen";
+import { ColorPicker } from "react-native-color-picker";
 
 var buffer = require("buffer").Buffer;
+var tinycolor = require("tinycolor2");
 
 // Import the config message
 var protobuf = require("protobufjs/minimal");
@@ -62,19 +65,19 @@ class HomeScreen extends React.Component {
         config: null
       },
       deviceInfo: {},
-      model: {
-        color: "rgba(255,0,0,1)",
-        opacity: 1
-      },
       modal: {
         motion: false,
         info: false,
         registration: false
       },
-      disabled: true
+      disabled: true,
+      configFetched: false
     };
+    this.busy = false;
     this.colors = colorConfig;
+    this.defaultColorSet = false;
     this.device = null;
+    this.lastPayload = null;
     this.payload = null;
     this.setColorAll = this.setColorAll.bind(this);
     this.manager = new BleManager();
@@ -115,8 +118,8 @@ class HomeScreen extends React.Component {
           this.device
             .connect()
             .then(device => {
-              this.setState({ disabled: false });
               device.onDisconnected(this.onDisconnect);
+              this.setState({ disabled: false });
               this.info("Discovering services and characteristics");
               return device.discoverAllServicesAndCharacteristics();
             })
@@ -240,28 +243,26 @@ class HomeScreen extends React.Component {
     }, true);
   };
 
+  getColorAll() {
+    color = this.state.config.frames[0].leds[0].colorConfig;
+
+    console.log("getColorAll:" + JSON.stringify(color));
+
+    // console.log("heex string ", tinycolor(out).toHexString());
+
+    return { r: color.red, g: color.green, b: color.blue };
+  }
+
   setColorAll(color) {
     //Update the model based on the color
-    this.setState({
-      model: {
-        color:
-          "rgb(" +
-          color.colorConfig.red +
-          "," +
-          color.colorConfig.green +
-          "," +
-          color.colorConfig.blue +
-          ")",
-        opacity: this.state.config.deviceBrightness / 100
-      }
-    });
+    console.log("color:" + JSON.stringify(color));
 
     // Temporary config for modification
     temp = this.state.config;
 
     // Modify the first frame
     temp.frames[0].leds.forEach(led => {
-      led.colorConfig = color.colorConfig;
+      led.colorConfig = { red: color.r, green: color.g, blue: color.b };
     });
 
     // Set the state and save it to disk
@@ -269,13 +270,24 @@ class HomeScreen extends React.Component {
     AsyncStorage.setItem("config", JSON.stringify(temp));
 
     // Convert the payload to binary and send it
+    // TODO if error don't push
     this.updateConfigPayload();
     this.sendConfig();
   }
 
   sendConfig = () => {
-    if (this.state.device.config != null && this.payload != null) {
+    if (
+      this.state.device.config != null &&
+      this.payload != null &&
+      !this.busy &&
+      !this.disabled
+    ) {
       this.info("Sending config.");
+
+      this.busy = true;
+
+      // Set old config
+      this.lastPayload = this.payload;
 
       start = new buffer.from(ble_config_tx_start).toString("base64");
       finish = new buffer.from(ble_config_tx_end).toString("base64");
@@ -284,7 +296,7 @@ class HomeScreen extends React.Component {
       out = [];
 
       out.push(start);
-      console.log("push " + start);
+      // console.log("push " + start);
 
       while (index < this.payload.length) {
         offset = this.payload.length - index;
@@ -298,14 +310,14 @@ class HomeScreen extends React.Component {
         data = this.payload.slice(index, index + offset);
         dataEncoded = new buffer.from(data).toString("base64");
 
-        console.log("push " + dataEncoded);
+        // console.log("push " + dataEncoded);
         out.push(dataEncoded);
 
         // Need to increment to the next one..
         index += offset;
       }
 
-      console.log("push " + finish);
+      // console.log("push " + finish);
       out.push(finish);
 
       // We create the start of a promise chain
@@ -315,14 +327,20 @@ class HomeScreen extends React.Component {
 
       // And append each function in the array to the promise chain
       for (const func of out) {
-        console.log("shifing " + out[index]);
-        chain = chain.then(
-          this.state.device.config.writeWithResponse(out[index++])
-        );
+        // console.log("shifing " + out[index]);
+        chain = chain.then(() => {
+          return this.state.device.config.writeWithResponse(out[index++]);
+        });
       }
 
       chain = chain.then(() => {
-        this.info("Config transfer complete.");
+        console.log("Config transfer complete.");
+        this.busy = false;
+
+        // If they are not equal.. send!
+        if (this.payload != this.lastPayload) {
+          this.sendConfig();
+        }
       });
 
       // console.log("push " + finish);
@@ -334,8 +352,6 @@ class HomeScreen extends React.Component {
       //   console.log(out[i]);
       //   chain = chain.then(this.state.device.config.writeWithResponse(out[i]));
       // }
-    } else {
-      Alert.alert("Config not ready.");
     }
   };
 
@@ -348,11 +364,11 @@ class HomeScreen extends React.Component {
 
     var message = sign.Config.create(this.state.config);
 
-    console.log("message:" + JSON.stringify(message));
+    // console.log("message:" + JSON.stringify(message));
 
     this.payload = sign.Config.encode(message).finish();
 
-    console.log("len: " + this.payload.length + " buf: " + this.payload);
+    // console.log("len: " + this.payload.length + " buf: " + this.payload);
   }
 
   componentWillMount() {
@@ -371,9 +387,6 @@ class HomeScreen extends React.Component {
       }
 
       this.setState({ modal: temp });
-
-      // Once we get the previous state, if any, release the hounds
-      SplashScreen.hide();
     });
 
     // Retrieve the config if it has been saved
@@ -383,6 +396,11 @@ class HomeScreen extends React.Component {
           console.log("setting from asyncstorage");
           this.setState({ config: JSON.parse(value) });
           console.log("config: " + JSON.stringify(this.state.config));
+          this.setColorWheelDefault();
+          this.setState({ configFetched: true });
+
+          // Once we get the previous state, if any, release the hounds
+          SplashScreen.hide();
         }
       })
       .done();
@@ -394,9 +412,19 @@ class HomeScreen extends React.Component {
         subscription.remove();
       }
     }, true);
-
-    this.updateConfigPayload();
   }
+
+  _onOnboardingYesButtonPressed = () => {
+    var temp = this.state.modal;
+    temp.registration = false;
+    this.setState({ modal: temp });
+    AsyncStorage.setItem("registered", "true");
+  };
+
+  _onOnboardingNoButtonPressed = () => {
+    // Disconnect
+    this.device.cancelConnection();
+  };
 
   //TODO confirm device via HTTPS
   onboard() {
@@ -410,23 +438,8 @@ class HomeScreen extends React.Component {
           <Text style={styles.instructions}>
             SN: {this.state.deviceInfo.serial}
           </Text>
-          <Button
-            title="Yes"
-            onPress={() => {
-              var temp = this.state.modal;
-              temp.registration = false;
-              this.setState({ modal: temp });
-              AsyncStorage.setItem("registered", "true");
-            }}
-          />
-
-          <Button
-            title="No"
-            onPress={() => {
-              // Disconnect
-              this.device.cancelConnection();
-            }}
-          />
+          <Button title="Yes" onPress={this._onOnboardingYesButtonPressed} />
+          <Button title="No" onPress={this._onOnboardingNoButtonPressed} />
         </View>
       );
     } else {
@@ -438,22 +451,208 @@ class HomeScreen extends React.Component {
     }
   }
 
+  _onColorChange = color => {
+    // console.log("hsb " + JSON.stringify(color));
+    // Always set these to 100 as we don't have the sliders
+    color.v = 100;
+    color.s = 100;
+    var temp = tinycolor(color).toRgb();
+    this.setColorAll(temp);
+  };
+
+  setColorWheelDefault() {
+    this.setState({
+      wheelDefault: tinycolor(this.getColorAll()).toHexString()
+    });
+  }
+
+  loadColorWheel = () => {
+    if (this.state.configFetched) {
+      return (
+        <ColorPicker
+          defaultColor={this.state.wheelDefault}
+          hideSliders={true}
+          onColorChange={this._onColorChange}
+          style={{
+            width: Dimensions.get("window").width * 0.8,
+            height: Dimensions.get("window").width * 0.8,
+            marginLeft: 25,
+            marginRight: 25,
+            alignSelf: "center"
+          }}
+        />
+      );
+    } else {
+      return;
+    }
+  };
+
+  _onShareReportPressed = () => {
+    var temp = {};
+
+    temp.message =
+      "State: " +
+      this.state.info +
+      "\n\nManufacturer: " +
+      this.state.deviceInfo.manufacturer +
+      "\n\nSN: " +
+      this.state.deviceInfo.serial +
+      "\n\nVerison: " +
+      this.state.deviceInfo.version +
+      "\n\nApp Version: " +
+      this.state.deviceInfo.version +
+      "\n\nConfig: " +
+      JSON.stringify(this.state.config);
+
+    temp.title = "Bug report!";
+
+    Share.share(temp, {
+      subject: temp.title,
+      excludedActivityTypes: [
+        "com.apple.UIKit.activity.PostToFacebook",
+        "com.apple.UIKit.activity.addToReadingList",
+        "com.apple.UIKit.activity.assignToContact",
+        "com.apple.UIKit.activity.PostToFacebook",
+        "com.apple.UIKit.activity.openInIBooks",
+        "com.apple.UIKit.activity.postToFlickr",
+        "com.apple.UIKit.activity.postToTencentWeibo",
+        "com.apple.UIKit.activity.postToVimeo",
+        "com.apple.UIKit.activity.postToWeibo",
+        "com.apple.UIKit.activity.PostToTwitter"
+      ]
+    });
+  };
+
+  _onInfoBackPressed = () => {
+    temp = this.state.modal;
+    temp.info = false;
+    this.setState({ modal: temp });
+  };
+
+  _onMotionInfoBackPressed = () => {
+    temp = this.state.modal;
+    temp.motion = false;
+    this.setState({ modal: temp });
+  };
+
+  loadRegistrationModal() {
+    return (
+      <Modal
+        animationType="none"
+        transparent={false}
+        visible={this.state.modal.registration}
+      >
+        <View style={styles.modal}>
+          <Text style={styles.welcome}>Welcome!</Text>
+          {this.onboard()}
+        </View>
+      </Modal>
+    );
+  }
+
+  loadMotionInfoModal() {
+    return (
+      <Modal
+        animationType="none"
+        transparent={false}
+        visible={this.state.modal.motion}
+      >
+        <View style={styles.modal}>
+          <Text style={styles.welcome}>What is Motion Mode?</Text>
+          <Text style={styles.instructions}>
+            Motion mode turns on your light only when motion is sensed. Think of
+            it like a motion sensitive night light... but better.
+          </Text>
+
+          <Button title="Back" onPress={this._onMotionInfoBackPressed} />
+        </View>
+      </Modal>
+    );
+  }
+
+  loadInfoModal() {
+    return (
+      <Modal
+        animationType="none"
+        transparent={false}
+        visible={this.state.modal.info}
+      >
+        <View style={styles.modal}>
+          <Text style={styles.welcome}>Info</Text>
+          <Text style={styles.instructions}>{this.state.info}</Text>
+          <Text style={styles.instructions}>
+            Manufacturer: {this.state.deviceInfo.manufacturer}
+          </Text>
+          <Text style={styles.instructions}>
+            Model: {this.state.deviceInfo.model}
+          </Text>
+          <Text style={styles.instructions}>
+            SN: {this.state.deviceInfo.serial}
+          </Text>
+          <Text style={styles.instructions}>
+            Verison: {this.state.deviceInfo.version}
+          </Text>
+          <Text style={styles.instructions}>
+            App Version: {this.state.deviceInfo.version}
+          </Text>
+          <Text style={styles.welcome}>Config</Text>
+          <Text style={styles.instructions}>
+            {JSON.stringify(this.state.config)}
+          </Text>
+
+          <Button title="Share report!" onPress={this._onShareReportPressed} />
+
+          <Button title="Back" onPress={this._onInfoBackPressed} />
+        </View>
+      </Modal>
+    );
+  }
+
+  _onBrightnessSliderChange = val => {
+    // console.log("Sliding value changed.");
+    var temp = this.state.config;
+    temp.deviceBrightness = val;
+    this.setState({ config: temp });
+    AsyncStorage.setItem("config", JSON.stringify(temp));
+  };
+
+  _onBrightnessSliderComplete = val => {
+    // console.log("Sliding complete.");
+    this.updateConfigPayload();
+    this.sendConfig();
+  };
+
+  _onMotionSwichChanged = val => {
+    var temp = this.state.config;
+    temp.motionEnabled = val;
+    this.setState({ config: temp });
+    AsyncStorage.setItem("config", JSON.stringify(temp));
+    this.updateConfigPayload();
+    this.sendConfig();
+  };
+
+  _onMotionQuestionButtonPressed = () => {
+    temp = this.state.modal;
+    temp.motion = true;
+    this.setState({ modal: temp });
+  };
+
+  _onInfoButtonPressed = () => {
+    temp = this.state.modal;
+    temp.info = true;
+    this.setState({ modal: temp });
+  };
+
+  _onConnectionButtonPressed = () => {
+    Alert.alert("Connection!");
+  };
+
   render() {
     return (
       <View style={styles.view}>
-        <Modal
-          animationType="slide"
-          transparent={false}
-          visible={this.state.modal.registration}
-          onRequestClose={() => {
-            alert("Modal has been closed.");
-          }}
-        >
-          <View style={styles.modal}>
-            <Text style={styles.welcome}>Welcome!</Text>
-            {this.onboard()}
-          </View>
-        </Modal>
+        {this.loadRegistrationModal()}
+        {this.loadInfoModal()}
+        {this.loadMotionInfoModal()}
         <View style={styles.header}>
           <View
             style={[
@@ -464,220 +663,52 @@ class HomeScreen extends React.Component {
             <Icon
               style={{ fontSize: 30, color: "black" }}
               name="wifi"
-              onPress={() => {
-                Alert.alert("Connection!");
-              }}
+              onPress={this._onConnectionButtonPressed}
             />
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.container}>
-          <View
-            style={[
-              { width: 270, height: 270 },
-              {
-                backgroundColor: this.state.model.color,
-                opacity: this.state.config.deviceBrightness / 100
-              }
-            ]}
-          />
-          <View style={styles.option}>
-            {this.colors.map(color => {
-              text =
-                "rgb(" +
-                color.colorConfig.red +
-                "," +
-                color.colorConfig.green +
-                "," +
-                color.colorConfig.blue +
-                ")";
-              return (
-                <TouchableHighlight
-                  disabled={this.state.disabled}
-                  key={text}
-                  onPress={() => this.setColorAll(color)}
-                >
-                  <View
-                    style={{
-                      width: 90,
-                      height: 90,
-                      backgroundColor: text
-                    }}
-                  />
-                </TouchableHighlight>
-              );
-            })}
+        {this.loadColorWheel()}
+        <View style={styles.option}>
+          <View style={styles.labelHolder}>
+            <Text style={styles.label}>Brightness</Text>
           </View>
-          <View style={styles.option}>
-            <View style={styles.labelHolder}>
-              <Text style={styles.label}>Brightness</Text>
-            </View>
-            <View>
-              <Slider
-                style={{ width: 150 }}
-                maximumValue={100}
-                minimumValue={10}
-                step={1}
-                value={this.state.config.deviceBrightness}
-                onValueChange={val => {
-                  // console.log("Sliding value changed.");
-                  var temp = this.state.config;
-                  temp.deviceBrightness = val;
-                  this.setState({ config: temp });
-                  AsyncStorage.setItem("config", JSON.stringify(temp));
-                }}
-                onSlidingComplete={val => {
-                  // console.log("Sliding complete.");
-                  this.updateConfigPayload();
-                  this.sendConfig();
-                }}
-                disabled={this.state.disabled}
-              />
-            </View>
-          </View>
-          <Modal
-            animationType="slide"
-            transparent={false}
-            visible={this.state.modal.motion}
-            onRequestClose={() => {
-              alert("Modal has been closed.");
-            }}
-          >
-            <View style={styles.modal}>
-              <Text style={styles.welcome}>What is Motion Mode?</Text>
-              <Text style={styles.instructions}>
-                Motion mode turns on your light only when motion is sensed.
-                Think of it like a motion sensitive night light... but better.
-              </Text>
-
-              <Button
-                title="Back"
-                onPress={() => {
-                  temp = this.state.modal;
-                  temp.motion = false;
-                  this.setState({ modal: temp });
-                }}
-              />
-            </View>
-          </Modal>
-          <View style={styles.option}>
-            <View style={styles.labelHolder}>
-              <Text style={styles.label}>Motion mode</Text>
-            </View>
-            <View style={styles.icon}>
-              <Icon
-                style={styles.label}
-                name="question-circle-o"
-                onPress={() => {
-                  temp = this.state.modal;
-                  temp.motion = true;
-                  this.setState({ modal: temp });
-                }}
-              />
-            </View>
-            <View style={styles.switch}>
-              <Switch
-                value={this.state.config.motionEnabled}
-                disabled={this.state.disabled}
-                onValueChange={val => {
-                  var temp = this.state.config;
-                  temp.motionEnabled = val;
-                  this.setState({ config: temp });
-                  AsyncStorage.setItem("config", JSON.stringify(temp));
-                  this.updateConfigPayload();
-                  this.sendConfig();
-                }}
-              />
-            </View>
-          </View>
-          <Modal
-            animationType="slide"
-            transparent={false}
-            visible={this.state.modal.info}
-          >
-            <View style={styles.modal}>
-              <Text style={styles.welcome}>Info</Text>
-              <Text style={styles.instructions}>{this.state.info}</Text>
-              <Text style={styles.instructions}>
-                Manufacturer: {this.state.deviceInfo.manufacturer}
-              </Text>
-              <Text style={styles.instructions}>
-                Model: {this.state.deviceInfo.model}
-              </Text>
-              <Text style={styles.instructions}>
-                SN: {this.state.deviceInfo.serial}
-              </Text>
-              <Text style={styles.instructions}>
-                Verison: {this.state.deviceInfo.version}
-              </Text>
-              <Text style={styles.instructions}>
-                App Version: {this.state.deviceInfo.version}
-              </Text>
-              <Text style={styles.welcome}>Config</Text>
-              <Text style={styles.instructions}>
-                {JSON.stringify(this.state.config)}
-              </Text>
-
-              <Button
-                title="Share report!"
-                onPress={() => {
-                  var temp = {};
-
-                  temp.message =
-                    "State: " +
-                    this.state.info +
-                    "\n\nManufacturer: " +
-                    this.state.deviceInfo.manufacturer +
-                    "\n\nSN: " +
-                    this.state.deviceInfo.serial +
-                    "\n\nVerison: " +
-                    this.state.deviceInfo.version +
-                    "\n\nApp Version: " +
-                    this.state.deviceInfo.version +
-                    "\n\nConfig: " +
-                    JSON.stringify(this.state.config);
-
-                  temp.title = "Bug report!";
-
-                  Share.share(temp, {
-                    subject: temp.title,
-                    excludedActivityTypes: [
-                      "com.apple.UIKit.activity.PostToFacebook",
-                      "com.apple.UIKit.activity.addToReadingList",
-                      "com.apple.UIKit.activity.assignToContact",
-                      "com.apple.UIKit.activity.PostToFacebook",
-                      "com.apple.UIKit.activity.openInIBooks",
-                      "com.apple.UIKit.activity.postToFlickr",
-                      "com.apple.UIKit.activity.postToTencentWeibo",
-                      "com.apple.UIKit.activity.postToVimeo",
-                      "com.apple.UIKit.activity.postToWeibo",
-                      "com.apple.UIKit.activity.PostToTwitter"
-                    ]
-                  });
-                }}
-              />
-
-              <Button
-                title="Back"
-                onPress={() => {
-                  temp = this.state.modal;
-                  temp.info = false;
-                  this.setState({ modal: temp });
-                }}
-              />
-            </View>
-          </Modal>
-          <View style={{ paddingTop: 10 }}>
-            <Button
-              title="More info"
-              onPress={() => {
-                temp = this.state.modal;
-                temp.info = true;
-                this.setState({ modal: temp });
-              }}
+          <View>
+            <Slider
+              style={{ width: 150 }}
+              maximumValue={100}
+              minimumValue={10}
+              step={1}
+              value={this.state.config.deviceBrightness}
+              onValueChange={this._onBrightnessSliderChange}
+              onSlidingComplete={this._onBrightnessSliderComplete}
+              disabled={this.state.disabled}
             />
           </View>
-        </ScrollView>
+        </View>
+        <View style={styles.option}>
+          <View style={styles.labelHolder}>
+            <Text style={styles.label}>Motion mode</Text>
+          </View>
+          <View style={styles.icon}>
+            <Icon
+              style={styles.label}
+              name="question-circle-o"
+              onPress={this._onMotionQuestionButtonPressed}
+            />
+          </View>
+          <View style={styles.switch}>
+            <Switch
+              value={this.state.config.motionEnabled}
+              disabled={this.state.disabled}
+              onValueChange={this._onMotionSwichChanged}
+            />
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 10 }}>
+          <Button title="More info" onPress={this._onInfoButtonPressed} />
+        </View>
       </View>
     );
   }

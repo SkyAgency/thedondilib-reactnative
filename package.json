@@ -13,10 +13,11 @@
     "react": "16.4.1",
     "react-native": "0.56.0",
     "react-native-ble-plx": "^0.9.1",
-    "react-native-color-wheel": "^0.1.5",
+    "react-native-color-picker": "^0.4.0",
     "react-native-splash-screen": "^3.1.0",
     "react-native-vector-icons": "^4.6.0",
-    "react-navigation": "^2.7.0"
+    "react-navigation": "^2.7.0",
+    "tinycolor2": "^1.4.1"
   },
   "devDependencies": {
     "babel-jest": "23.4.0",
