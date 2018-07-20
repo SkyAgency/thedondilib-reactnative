@@ -1,0 +1,74 @@
+[
+  {
+    "text": "red",
+    "colorConfig": {
+      "red": 255,
+      "green": 0,
+      "blue": 0
+    }
+  },
+  {
+    "text": "blue",
+    "colorConfig": {
+      "red": 0,
+      "green": 0,
+      "blue": 255
+    }
+  },
+  {
+    "text": "green",
+    "colorConfig": {
+      "red": 0,
+      "green": 255,
+      "blue": 0
+    }
+  },
+  {
+    "text": "blueviolet",
+    "colorConfig": {
+      "red": 138,
+      "green": 43,
+      "blue": 226
+    }
+  },
+  {
+    "text": "hotpink",
+    "colorConfig": {
+      "red": 255,
+      "green": 105,
+      "blue": 180
+    }
+  },
+  {
+    "text": "orange",
+    "colorConfig": {
+      "red": 255,
+      "green": 165,
+      "blue": 0
+    }
+  },
+  {
+    "text": "skyblue",
+    "colorConfig": {
+      "red": 135,
+      "green": 206,
+      "blue": 235
+    }
+  },
+  {
+    "text": "springgreen",
+    "colorConfig": {
+      "red": 0,
+      "green": 255,
+      "blue": 127
+    }
+  },
+  {
+    "name": "yellow",
+    "colorConfig": {
+      "red": 255,
+      "green": 255,
+      "blue": 0
+    }
+  }
+]

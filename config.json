@@ -2,7 +2,7 @@
   "animationEnabled": false,
   "motionEnabled": false,
   "motionTimeout": 15,
-  "deviceBrightness": 50,
+  "deviceBrightness": 100,
   "frames": [
     {
       "duration": 100,
