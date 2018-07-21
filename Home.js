@@ -53,6 +53,17 @@ const ble_config_tx_start = new Uint8Array([0xaa, 0xaa]);
 const ble_config_tx_end = new Uint8Array([0x5a, 0xa5]);
 const ble_config_chunk_size = 128;
 
+const defaultState = {};
+
+const defaultDeviceInfo = {
+  id: "",
+  model: "",
+  name: "",
+  serial: "",
+  manufacturer: "",
+  version: ""
+};
+
 class HomeScreen extends React.Component {
   constructor() {
     super();
@@ -60,15 +71,12 @@ class HomeScreen extends React.Component {
       info: "Start",
       values: {},
       config: defaultConfig,
-      device: {
-        id: null,
-        config: null
-      },
-      deviceInfo: {},
+      deviceInfo: defaultDeviceInfo,
       modal: {
         motion: false,
         info: false,
-        registration: false
+        registration: true,
+        connection: false
       },
       disabled: true,
       configFetched: false
@@ -91,149 +99,124 @@ class HomeScreen extends React.Component {
     this.setState({ info: "ERROR: " + message });
   }
 
+  processChar(char, temp) {
+    // If we have a config char set it up
+    if (char.isReadable && char.value != null) {
+      switch (char.uuid) {
+        case manufacturerUUID:
+          if (atob(char.value) == "Circuit Dojo") {
+            temp.manufacturer = atob(char.value);
+          } else {
+            return false;
+          }
+          break;
+        case modelUUID:
+          temp.model = atob(char.value);
+          break;
+        case serialUUID:
+          // TODO: Check local cache to see if the serial has
+          // already been checked
+          // TODO: if not, validate serial with web backend.=
+          // TODO: save validated results to file.
+          temp.serial = atob(char.value);
+          break;
+        case versionUUID:
+          temp.version = atob(char.value);
+          break;
+        default:
+      }
+
+      // console.log(temp);
+    }
+
+    return true;
+  }
+
   scanAndConnect() {
     //set the first arg to the UUIDs of the services in use.
-    this.manager.startDeviceScan(
-      [batsUUID, disUUID, confsUUID],
-      null,
-      (error, device) => {
-        this.info("Scanning...");
-        console.log(device);
+    this.manager.startDeviceScan([batsUUID, disUUID], null, (error, device) => {
+      this.info("Scanning...");
+      // console.log(device);
 
-        //TODO: Connect if it contains the important information we need.
-        if (
-          device.localName != null &&
-          device.localName.indexOf(" Light") !== -1
-        ) {
-          console.log(device);
+      //TODO: Connect if it contains the important information we need.
+      if (
+        device.localName != null &&
+        device.localName.indexOf(" Light") !== -1
+      ) {
+        this.manager.stopDeviceScan();
 
-          this.manager.stopDeviceScan();
+        //Sets this globally
+        this.device = device;
 
-          //Sets this globally
-          this.device = device;
+        // Then connect
+        // TODO: clean this up a bit
+        // TODO: Subscribe to battery notifications
+        this.device
+          .connect()
+          .then(device => {
+            device.onDisconnected(this.onDisconnect);
+            this.setState({ disabled: false });
+            this.info("Discovering services and characteristics");
+            return device.discoverAllServicesAndCharacteristics();
+          })
+          .then(device => {
+            return device.services();
+          })
+          .then(services => {
+            // console.log(services);
+            var temp = this.state.deviceInfo;
+            temp.name = device.localName;
+            temp.id = device.id;
 
-          // Then connect
-          // TODO: clean this up a bit
-          // TODO: Subscribe to battery notifications
-          this.device
-            .connect()
-            .then(device => {
-              device.onDisconnected(this.onDisconnect);
-              this.setState({ disabled: false });
-              this.info("Discovering services and characteristics");
-              return device.discoverAllServicesAndCharacteristics();
-            })
-            .then(device => {
-              return device.services();
-            })
-            .then(services => {
-              // console.log(services);
-              var temp = { name: device.localName };
+            console.log(temp);
 
-              //TODO: validate that the device has all the necessary items to connect
+            //TODO: validate that the device has all the necessary items to connect
 
-              services.forEach((service, i) => {
-                service.characteristics().then(chars => {
-                  chars.forEach((char, i) => {
-                    // console.log(char);
+            let chain = Promise.resolve();
 
-                    // If we have a config char set it up
-                    if (char.uuid == confUUID) {
-                      console.log("retrieving config char");
-                      this.setState({
-                        device: { config: char, id: this.device.id }
-                      });
-                    }
+            services.forEach((service, i) => {
+              chain = chain.then(() => {
+                return service.characteristics();
+              });
 
-                    if (char.isReadable) {
-                      char.read().then(resp => {
-                        if (resp.value) {
-                          switch (char.uuid) {
-                            case manufacturerUUID:
-                              if (atob(resp.value) == "Circuit Dojo") {
-                                temp.manufacturer = atob(resp.value);
-                              } else {
-                                // Disconnect and get out of here if the MFR is not us
-                                console.log(
-                                  "Canceling connection not CD product"
-                                );
-                                device.cancelConnection();
-                                return;
-                              }
-
-                              break;
-                            case modelUUID:
-                              temp.model = atob(resp.value);
-                              break;
-                            case serialUUID:
-                              // TODO: Check local cache to see if the serial has
-                              // already been checked
-                              // TODO: if not, validate serial with web backend.=
-                              // TODO: save validated results to file.
-                              temp.serial = atob(resp.value);
-                              break;
-                            case versionUUID:
-                              temp.version = atob(resp.value);
-                              break;
-                            default:
-                          }
-
-                          // console.log(atob(resp.value));
-                          this.setState({
-                            deviceInfo: temp
-                          });
-                        }
-                      });
-                    }
-                  });
+              chain = chain.then(chars => {
+                chars.forEach((char, i) => {
+                  // console.log(temp);
+                  if (!this.processChar(char, temp)) {
+                    // Disconnect and get out of here if the MFR is not us
+                    console.log("Canceling connection not CD product");
+                    device.cancelConnection();
+                    return;
+                  }
                 });
               });
-              this.info("Services found");
             });
-        }
 
-        if (error) {
-          console.log("error");
-          this.error(error.message);
-          return;
-        }
+            chain = chain.then(() => {
+              // console.log(temp);
+              // Need to make sure everything is done before this is set
+              this.setState({
+                deviceInfo: temp
+              });
+            });
 
-        // if (device.localName != null && device.localName.indexOf("Light") != -1) {
-        //   this.info("Connecting to " + device.localName);
-
-        // TODO check if it has the DIS service
-        // TODO check the MFR info
-        // TODO check the serial #
-
-        // this.manager.stopDeviceScan();
-        // device
-        //   .connect()
-        //   .then(device => {
-        //     this.info("Discovering services and characteristics");
-        //     return device.discoverAllServicesAndCharacteristics();
-        //   })
-        //   .then(device => {
-        //     this.info("Setting notifications");
-        //     return this.setupNotifications(device);
-        //   })
-        //   .then(
-        //     () => {
-        //       this.info("Listening...");
-        //     },
-        //     error => {
-        //       this.error(error.message);
-        //     }
-        //   );
-        // }
+            this.info("Services found");
+          });
       }
-    );
+
+      if (error) {
+        console.log("error");
+        this.error(error.message);
+        return;
+      }
+    });
   }
 
   onDisconnect = (error, device) => {
     this.info("Reconnecting..");
 
     this.setState({ disabled: true });
-    this.setState({ deviceInfo: {} });
+    this.setState({ deviceInfo: defaultDeviceInfo });
 
     const subscription = this.manager.onStateChange(state => {
       if (state === "PoweredOn") {
@@ -242,6 +225,16 @@ class HomeScreen extends React.Component {
       }
     }, true);
   };
+
+  getStateFromFile() {
+    // Retrieve the config if it has been saved
+    return AsyncStorage.getItem("state");
+  }
+
+  saveStateToFile() {
+    console.log(JSON.stringify(this.state.config));
+    AsyncStorage.setItem("state", JSON.stringify(this.state));
+  }
 
   getColorAll() {
     color = this.state.config.frames[0].leds[0].colorConfig;
@@ -263,21 +256,18 @@ class HomeScreen extends React.Component {
     // Modify the first frame
     temp.frames[0].leds.forEach(led => {
       led.colorConfig = { red: color.r, green: color.g, blue: color.b };
+      led.enabled = true;
+      led.duty = 100;
     });
 
     // Set the state and save it to disk
     this.setState({ config: temp });
-    AsyncStorage.setItem("config", JSON.stringify(temp));
-
-    // Convert the payload to binary and send it
-    // TODO if error don't push
-    this.updateConfigPayload();
-    this.sendConfig();
+    this.updateConfig();
   }
 
-  sendConfig = () => {
+  sendConfigPayload = () => {
     if (
-      this.state.device.config != null &&
+      this.state.config != null &&
       this.payload != null &&
       !this.busy &&
       !this.disabled
@@ -329,29 +319,23 @@ class HomeScreen extends React.Component {
       for (const func of out) {
         // console.log("shifing " + out[index]);
         chain = chain.then(() => {
-          return this.state.device.config.writeWithResponse(out[index++]);
+          return this.device.writeCharacteristicWithResponseForService(
+            confsUUID,
+            confUUID,
+            out[index++]
+          );
         });
       }
 
       chain = chain.then(() => {
-        console.log("Config transfer complete.");
+        // console.log(this.state.config);
         this.busy = false;
 
         // If they are not equal.. send!
         if (this.payload != this.lastPayload) {
-          this.sendConfig();
+          this.sendConfigPayload();
         }
       });
-
-      // console.log("push " + finish);
-      // out.push(finish);
-      //
-      // // Write the data sequentially
-      // var chain = q.when();
-      // for (var i = 0; i < out.length; i++) {
-      //   console.log(out[i]);
-      //   chain = chain.then(this.state.device.config.writeWithResponse(out[i]));
-      // }
     }
   };
 
@@ -374,36 +358,25 @@ class HomeScreen extends React.Component {
   componentWillMount() {
     // console.log("componentWillMount");
 
-    // console.log("colors: " + JSON.stringify(this.colors));
-    console.log("config: " + this.state.config);
+    this.getStateFromFile().then(state => {
+      if (state) {
+        console.log("state from file: " + state);
 
-    AsyncStorage.getItem("registered").then(value => {
-      var temp = this.state.modal;
+        var tstate = JSON.parse(state);
+        tstate.configFetched = false;
+        tstate.disabled = true;
+        this.setState(tstate);
 
-      if (value && value == "true") {
-        temp.registration = false;
-      } else {
-        temp.registration = true;
+        // First set the color wheel
+        this.setColorWheelDefault();
+
+        // Then set the configFetched to true!
+        this.setState({ configFetched: true });
       }
 
-      this.setState({ modal: temp });
+      // Once we get the previous state, if any, release the hounds
+      SplashScreen.hide();
     });
-
-    // Retrieve the config if it has been saved
-    AsyncStorage.getItem("config")
-      .then(value => {
-        if (value) {
-          console.log("setting from asyncstorage");
-          this.setState({ config: JSON.parse(value) });
-          console.log("config: " + JSON.stringify(this.state.config));
-          this.setColorWheelDefault();
-          this.setState({ configFetched: true });
-
-          // Once we get the previous state, if any, release the hounds
-          SplashScreen.hide();
-        }
-      })
-      .done();
 
     // Scan and connect
     const subscription = this.manager.onStateChange(state => {
@@ -418,7 +391,7 @@ class HomeScreen extends React.Component {
     var temp = this.state.modal;
     temp.registration = false;
     this.setState({ modal: temp });
-    AsyncStorage.setItem("registered", "true");
+    this.saveStateToFile();
   };
 
   _onOnboardingNoButtonPressed = () => {
@@ -464,6 +437,8 @@ class HomeScreen extends React.Component {
     this.setState({
       wheelDefault: tinycolor(this.getColorAll()).toHexString()
     });
+
+    console.log("wheel default " + this.state.wheelDefault);
   }
 
   loadColorWheel = () => {
@@ -570,6 +545,88 @@ class HomeScreen extends React.Component {
     );
   }
 
+  updateConfig() {
+    this.saveStateToFile();
+    this.updateConfigPayload();
+    this.sendConfigPayload();
+  }
+
+  _onConnectionBackPressed = () => {
+    temp = this.state.modal;
+    temp.connection = false;
+    this.setState({ modal: temp });
+  };
+
+  _onDeleteOkButtonPressed = () => {
+    console.log("ok!");
+  };
+
+  _onDeleteCancelButtonPressed = () => {
+    console.log("canceled!");
+  };
+
+  _onDisableMonogamySwitchChange = val => {
+    console.log("Monogamy mode: " + val);
+    var temp = this.state.config;
+    temp.monogamyMode = val;
+    this.setState({ config: temp });
+    this.updateConfig();
+  };
+
+  loadConnectionModal() {
+    return (
+      <Modal
+        animationType="none"
+        transparent={false}
+        visible={this.state.modal.connection}
+      >
+        <View style={styles.connectionModal}>
+          <Text style={styles.welcome}>
+            {this.state.disabled
+              ? "Disconnected."
+              : this.state.deviceInfo.name + " connected."}
+          </Text>
+
+          <View style={styles.option}>
+            <View style={styles.labelHolder}>
+              <Text style={{ fontSize: 15, flex: 2 }}>
+                Only connect to this phone
+              </Text>
+            </View>
+            <View style={styles.switch}>
+              <Switch
+                value={this.state.config.monogamyMode}
+                disabled={this.state.disabled}
+                onValueChange={this._onDisableMonogamySwitchChange}
+              />
+            </View>
+          </View>
+
+          <Button
+            title="Remove Connection"
+            disabled={this.state.disabled}
+            onPress={() => {
+              Alert.alert(
+                "Delete Connection",
+                "Are you sure you want to delete the connection?",
+                [
+                  {
+                    text: "Cancel",
+                    onPress: this._onDeleteCancelButtonPressed,
+                    style: "cancel"
+                  },
+                  { text: "OK", onPress: this._onDeleteOkButtonPressed }
+                ],
+                { cancelable: false }
+              );
+            }}
+          />
+          <Button title="Back" onPress={this._onConnectionBackPressed} />
+        </View>
+      </Modal>
+    );
+  }
+
   loadInfoModal() {
     return (
       <Modal
@@ -599,9 +656,7 @@ class HomeScreen extends React.Component {
           <Text style={styles.instructions}>
             {JSON.stringify(this.state.config)}
           </Text>
-
           <Button title="Share report!" onPress={this._onShareReportPressed} />
-
           <Button title="Back" onPress={this._onInfoBackPressed} />
         </View>
       </Modal>
@@ -613,22 +668,18 @@ class HomeScreen extends React.Component {
     var temp = this.state.config;
     temp.deviceBrightness = val;
     this.setState({ config: temp });
-    AsyncStorage.setItem("config", JSON.stringify(temp));
   };
 
   _onBrightnessSliderComplete = val => {
     // console.log("Sliding complete.");
-    this.updateConfigPayload();
-    this.sendConfig();
+    this.updateConfig();
   };
 
   _onMotionSwichChanged = val => {
     var temp = this.state.config;
     temp.motionEnabled = val;
     this.setState({ config: temp });
-    AsyncStorage.setItem("config", JSON.stringify(temp));
-    this.updateConfigPayload();
-    this.sendConfig();
+    this.updateConfig();
   };
 
   _onMotionQuestionButtonPressed = () => {
@@ -644,7 +695,9 @@ class HomeScreen extends React.Component {
   };
 
   _onConnectionButtonPressed = () => {
-    Alert.alert("Connection!");
+    temp = this.state.modal;
+    temp.connection = true;
+    this.setState({ modal: temp });
   };
 
   render() {
@@ -653,6 +706,7 @@ class HomeScreen extends React.Component {
         {this.loadRegistrationModal()}
         {this.loadInfoModal()}
         {this.loadMotionInfoModal()}
+        {this.loadConnectionModal()}
         <View style={styles.header}>
           <View
             style={[
@@ -726,6 +780,10 @@ const styles = StyleSheet.create({
     flex: 2,
     justifyContent: "center"
   },
+  deleteButton: {
+    paddingTop: 10,
+    paddingBottom: 10
+  },
   icon: {
     justifyContent: "center"
   },
@@ -754,6 +812,12 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 44,
     alignItems: "center",
+    backgroundColor: "#F5FCFF"
+  },
+  connectionModal: {
+    flex: 1,
+    justifyContent: "center",
+    alignSelf: "stretch",
     backgroundColor: "#F5FCFF"
   },
   modal: {

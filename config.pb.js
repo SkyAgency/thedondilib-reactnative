@@ -995,6 +995,7 @@
              * @interface IConfig
              * @property {boolean} animationEnabled Config animationEnabled
              * @property {boolean} motionEnabled Config motionEnabled
+             * @property {boolean} monogamyMode Config monogamyMode
              * @property {number} motionTimeout Config motionTimeout
              * @property {number} deviceBrightness Config deviceBrightness
              * @property {Array.<sign.ILedFrame>|null} [frames] Config frames
@@ -1032,6 +1033,14 @@
              * @instance
              */
             Config.prototype.motionEnabled = true;
+    
+            /**
+             * Config monogamyMode.
+             * @member {boolean} monogamyMode
+             * @memberof sign.Config
+             * @instance
+             */
+            Config.prototype.monogamyMode = true;
     
             /**
              * Config motionTimeout.
@@ -1091,13 +1100,14 @@
                     writer = $Writer.create();
                 writer.uint32(/* id 1, wireType 0 =*/8).bool(message.animationEnabled);
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.motionEnabled);
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.motionTimeout);
-                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.deviceBrightness);
+                writer.uint32(/* id 3, wireType 0 =*/24).bool(message.monogamyMode);
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.motionTimeout);
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.deviceBrightness);
                 if (message.frames != null && message.frames.length)
                     for (var i = 0; i < message.frames.length; ++i)
-                        $root.sign.LedFrame.encode(message.frames[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                        $root.sign.LedFrame.encode(message.frames[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 if (message._unused != null && message.hasOwnProperty("_unused"))
-                    writer.uint32(/* id 6, wireType 2 =*/50).bytes(message._unused);
+                    writer.uint32(/* id 7, wireType 2 =*/58).bytes(message._unused);
                 return writer;
             };
     
@@ -1139,17 +1149,20 @@
                         message.motionEnabled = reader.bool();
                         break;
                     case 3:
-                        message.motionTimeout = reader.uint32();
+                        message.monogamyMode = reader.bool();
                         break;
                     case 4:
-                        message.deviceBrightness = reader.uint32();
+                        message.motionTimeout = reader.uint32();
                         break;
                     case 5:
+                        message.deviceBrightness = reader.uint32();
+                        break;
+                    case 6:
                         if (!(message.frames && message.frames.length))
                             message.frames = [];
                         message.frames.push($root.sign.LedFrame.decode(reader, reader.uint32()));
                         break;
-                    case 6:
+                    case 7:
                         message._unused = reader.bytes();
                         break;
                     default:
@@ -1161,6 +1174,8 @@
                     throw $util.ProtocolError("missing required 'animationEnabled'", { instance: message });
                 if (!message.hasOwnProperty("motionEnabled"))
                     throw $util.ProtocolError("missing required 'motionEnabled'", { instance: message });
+                if (!message.hasOwnProperty("monogamyMode"))
+                    throw $util.ProtocolError("missing required 'monogamyMode'", { instance: message });
                 if (!message.hasOwnProperty("motionTimeout"))
                     throw $util.ProtocolError("missing required 'motionTimeout'", { instance: message });
                 if (!message.hasOwnProperty("deviceBrightness"))
@@ -1199,6 +1214,8 @@
                     return "animationEnabled: boolean expected";
                 if (typeof message.motionEnabled !== "boolean")
                     return "motionEnabled: boolean expected";
+                if (typeof message.monogamyMode !== "boolean")
+                    return "monogamyMode: boolean expected";
                 if (!$util.isInteger(message.motionTimeout))
                     return "motionTimeout: integer expected";
                 if (!$util.isInteger(message.deviceBrightness))
@@ -1234,6 +1251,8 @@
                     message.animationEnabled = Boolean(object.animationEnabled);
                 if (object.motionEnabled != null)
                     message.motionEnabled = Boolean(object.motionEnabled);
+                if (object.monogamyMode != null)
+                    message.monogamyMode = Boolean(object.monogamyMode);
                 if (object.motionTimeout != null)
                     message.motionTimeout = object.motionTimeout >>> 0;
                 if (object.deviceBrightness != null)
@@ -1274,6 +1293,7 @@
                 if (options.defaults) {
                     object.animationEnabled = false;
                     object.motionEnabled = true;
+                    object.monogamyMode = true;
                     object.motionTimeout = 30;
                     object.deviceBrightness = 100;
                     object._unused = options.bytes === String ? "" : [];
@@ -1282,6 +1302,8 @@
                     object.animationEnabled = message.animationEnabled;
                 if (message.motionEnabled != null && message.hasOwnProperty("motionEnabled"))
                     object.motionEnabled = message.motionEnabled;
+                if (message.monogamyMode != null && message.hasOwnProperty("monogamyMode"))
+                    object.monogamyMode = message.monogamyMode;
                 if (message.motionTimeout != null && message.hasOwnProperty("motionTimeout"))
                     object.motionTimeout = message.motionTimeout;
                 if (message.deviceBrightness != null && message.hasOwnProperty("deviceBrightness"))

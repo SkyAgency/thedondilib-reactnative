@@ -1,6 +1,7 @@
 {
   "animationEnabled": false,
-  "motionEnabled": false,
+  "motionEnabled": true,
+  "monogamyMode": true,
   "motionTimeout": 15,
   "deviceBrightness": 100,
   "frames": [
@@ -16,8 +17,8 @@
           "duty": 100,
           "colorConfig": {
             "red": 255,
-            "green": 255,
-            "blue": 255
+            "green": 0,
+            "blue": 0
           }
         },
         {
@@ -29,8 +30,8 @@
           "duty": 100,
           "colorConfig": {
             "red": 255,
-            "green": 255,
-            "blue": 255
+            "green": 0,
+            "blue": 0
           }
         },
         {
@@ -42,8 +43,8 @@
           "duty": 100,
           "colorConfig": {
             "red": 255,
-            "green": 255,
-            "blue": 255
+            "green": 0,
+            "blue": 0
           }
         },
         {
@@ -55,8 +56,8 @@
           "duty": 100,
           "colorConfig": {
             "red": 255,
-            "green": 255,
-            "blue": 255
+            "green": 0,
+            "blue": 0
           }
         }
       ]
