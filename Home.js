@@ -101,7 +101,7 @@ class HomeScreen extends React.Component {
 
   processChar(char, temp) {
     // If we have a config char set it up
-    if (char.isReadable && char.value != null) {
+    if (char.value != null) {
       switch (char.uuid) {
         case manufacturerUUID:
           if (atob(char.value) == "Circuit Dojo") {
@@ -133,6 +133,7 @@ class HomeScreen extends React.Component {
   }
 
   scanAndConnect() {
+    this.info("Scanning...");
     //set the first arg to the UUIDs of the services in use.
     this.manager.startDeviceScan([batsUUID, disUUID], null, (error, device) => {
       this.info("Scanning...");
@@ -145,6 +146,17 @@ class HomeScreen extends React.Component {
       ) {
         this.manager.stopDeviceScan();
 
+        // If the device id is set, but the IDs do not match, abort!
+        if (
+          this.state.deviceInfo.id != "" &&
+          this.state.deviceInfo.id != device.id
+        ) {
+          console.log("id is set but no match");
+          return;
+        } else {
+          console.log("id is set with match");
+        }
+
         //Sets this globally
         this.device = device;
 
@@ -154,6 +166,7 @@ class HomeScreen extends React.Component {
         this.device
           .connect()
           .then(device => {
+            // console.log(device);
             device.onDisconnected(this.onDisconnect);
             this.setState({ disabled: false });
             this.info("Discovering services and characteristics");
@@ -168,7 +181,7 @@ class HomeScreen extends React.Component {
             temp.name = device.localName;
             temp.id = device.id;
 
-            console.log(temp);
+            // console.log(temp);
 
             //TODO: validate that the device has all the necessary items to connect
 
@@ -181,26 +194,42 @@ class HomeScreen extends React.Component {
 
               chain = chain.then(chars => {
                 chars.forEach((char, i) => {
-                  // console.log(temp);
-                  if (!this.processChar(char, temp)) {
-                    // Disconnect and get out of here if the MFR is not us
-                    console.log("Canceling connection not CD product");
-                    device.cancelConnection();
-                    return;
+                  if (char.isReadable) {
+                    return char.read().then(char => {
+                      // console.log(char);
+
+                      if (!this.processChar(char, temp)) {
+                        // Disconnect and get out of here if the MFR is not us
+                        console.log("Canceling connection not CD product");
+                        device.cancelConnection();
+                        return;
+                      }
+
+                      // console.log("set device info");
+                      this.setState({
+                        deviceInfo: temp
+                      });
+
+                      // console.log("returning ok: " + JSON.stringify(temp));
+                    });
                   }
+                  // console.log(char);
                 });
               });
             });
 
-            chain = chain.then(() => {
-              // console.log(temp);
-              // Need to make sure everything is done before this is set
-              this.setState({
-                deviceInfo: temp
-              });
-            });
+            return chain;
+          })
+          .then(() => {
+            // Update config..
+            if (!this.state.modal.registration) {
+              this.updateConfig();
+            }
 
             this.info("Services found");
+          })
+          .catch(function(error) {
+            console.log(error);
           });
       }
 
@@ -215,10 +244,13 @@ class HomeScreen extends React.Component {
   onDisconnect = (error, device) => {
     this.info("Reconnecting..");
 
+    console.log("reconnecting");
+
     this.setState({ disabled: true });
     this.setState({ deviceInfo: defaultDeviceInfo });
 
     const subscription = this.manager.onStateChange(state => {
+      console.log("subscipt " + state);
       if (state === "PoweredOn") {
         this.scanAndConnect();
         subscription.remove();
@@ -234,6 +266,15 @@ class HomeScreen extends React.Component {
   saveStateToFile() {
     console.log(JSON.stringify(this.state.config));
     AsyncStorage.setItem("state", JSON.stringify(this.state));
+  }
+
+  async clearStateFile() {
+    try {
+      await AsyncStorage.removeItem("state");
+      return true;
+    } catch (exception) {
+      return false;
+    }
   }
 
   getColorAll() {
@@ -262,10 +303,13 @@ class HomeScreen extends React.Component {
 
     // Set the state and save it to disk
     this.setState({ config: temp });
-    this.updateConfig();
+
+    if (!this.disabled) {
+      this.updateConfig();
+    }
   }
 
-  sendConfigPayload = () => {
+  sendConfigPayload(callback) {
     if (
       this.state.config != null &&
       this.payload != null &&
@@ -331,13 +375,16 @@ class HomeScreen extends React.Component {
         // console.log(this.state.config);
         this.busy = false;
 
+        // Call the callback if its there
+        callback && callback();
+
         // If they are not equal.. send!
         if (this.payload != this.lastPayload) {
           this.sendConfigPayload();
         }
       });
     }
-  };
+  }
 
   updateConfigPayload() {
     // Parse and update the payload
@@ -380,7 +427,9 @@ class HomeScreen extends React.Component {
 
     // Scan and connect
     const subscription = this.manager.onStateChange(state => {
+      console.log("subscipt " + state);
       if (state === "PoweredOn") {
+        console.log("subscript");
         this.scanAndConnect();
         subscription.remove();
       }
@@ -545,10 +594,14 @@ class HomeScreen extends React.Component {
     );
   }
 
-  updateConfig() {
+  updateConfig(callback) {
     this.saveStateToFile();
     this.updateConfigPayload();
-    this.sendConfigPayload();
+    this.sendConfigPayload(callback);
+  }
+
+  test() {
+    console.log("test");
   }
 
   _onConnectionBackPressed = () => {
@@ -558,7 +611,27 @@ class HomeScreen extends React.Component {
   };
 
   _onDeleteOkButtonPressed = () => {
-    console.log("ok!");
+    //async wait for this to complete
+    this.clearStateFile();
+
+    var temp = this.state.config;
+    temp.monogamyMode = false;
+    this.setState({ config: temp });
+
+    //Update config..
+    this.updateConfig(() => {
+      console.log("canceling conneciton");
+      this.manager.cancelDeviceConnection(this.state.deviceInfo.id);
+    });
+
+    temp.monogamyMode = true;
+    this.setState({ config: temp });
+
+    var temp = this.state.modal;
+    temp.registration = true;
+    temp.connection = false;
+    this.setState({ modal: temp });
+    this.saveStateToFile();
   };
 
   _onDeleteCancelButtonPressed = () => {
