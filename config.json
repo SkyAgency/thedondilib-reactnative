@@ -1,66 +1,14 @@
 {
-  "animationEnabled": false,
-  "motionEnabled": true,
-  "monogamyMode": true,
-  "motionTimeout": 15,
-  "deviceBrightness": 100,
-  "frames": [
-    {
-      "duration": 100,
-      "leds": [
-        {
-          "position": {
-            "x": 67,
-            "y": 0
-          },
-          "enabled": false,
-          "duty": 100,
-          "colorConfig": {
-            "red": 255,
-            "green": 0,
-            "blue": 0
-          }
-        },
-        {
-          "position": {
-            "x": 67,
-            "y": 2
-          },
-          "enabled": false,
-          "duty": 100,
-          "colorConfig": {
-            "red": 255,
-            "green": 0,
-            "blue": 0
-          }
-        },
-        {
-          "position": {
-            "x": 68,
-            "y": 0
-          },
-          "enabled": false,
-          "duty": 100,
-          "colorConfig": {
-            "red": 255,
-            "green": 0,
-            "blue": 0
-          }
-        },
-        {
-          "position": {
-            "x": 68,
-            "y": 1
-          },
-          "enabled": true,
-          "duty": 100,
-          "colorConfig": {
-            "red": 255,
-            "green": 0,
-            "blue": 0
-          }
-        }
-      ]
+  "motion_timeout": 30,
+  "motion_enabled": false,
+  "device_brightness": 100,
+  "led_config": {
+    "mode": 0,
+    "pattern": 0,
+    "color_config": {
+      "red": 0,
+      "green": 255,
+      "blue": 0
     }
-  ]
+  }
 }
