@@ -65,7 +65,7 @@
              * @memberof sign.LedColorConfig
              * @instance
              */
-            LedColorConfig.prototype.green = 255;
+            LedColorConfig.prototype.green = 0;
     
             /**
              * LedColorConfig blue.
@@ -73,7 +73,7 @@
              * @memberof sign.LedColorConfig
              * @instance
              */
-            LedColorConfig.prototype.blue = 255;
+            LedColorConfig.prototype.blue = 0;
     
             /**
              * Creates a new LedColorConfig instance using the specified properties.
@@ -231,8 +231,8 @@
                 var object = {};
                 if (options.defaults) {
                     object.red = 255;
-                    object.green = 255;
-                    object.blue = 255;
+                    object.green = 0;
+                    object.blue = 0;
                 }
                 if (message.red != null && message.hasOwnProperty("red"))
                     object.red = message.red;
@@ -257,226 +257,15 @@
             return LedColorConfig;
         })();
     
-        sign.LedPosition = (function() {
-    
-            /**
-             * Properties of a LedPosition.
-             * @memberof sign
-             * @interface ILedPosition
-             * @property {number} x LedPosition x
-             * @property {number} y LedPosition y
-             */
-    
-            /**
-             * Constructs a new LedPosition.
-             * @memberof sign
-             * @classdesc Represents a LedPosition.
-             * @implements ILedPosition
-             * @constructor
-             * @param {sign.ILedPosition=} [properties] Properties to set
-             */
-            function LedPosition(properties) {
-                if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-    
-            /**
-             * LedPosition x.
-             * @member {number} x
-             * @memberof sign.LedPosition
-             * @instance
-             */
-            LedPosition.prototype.x = 97;
-    
-            /**
-             * LedPosition y.
-             * @member {number} y
-             * @memberof sign.LedPosition
-             * @instance
-             */
-            LedPosition.prototype.y = 0;
-    
-            /**
-             * Creates a new LedPosition instance using the specified properties.
-             * @function create
-             * @memberof sign.LedPosition
-             * @static
-             * @param {sign.ILedPosition=} [properties] Properties to set
-             * @returns {sign.LedPosition} LedPosition instance
-             */
-            LedPosition.create = function create(properties) {
-                return new LedPosition(properties);
-            };
-    
-            /**
-             * Encodes the specified LedPosition message. Does not implicitly {@link sign.LedPosition.verify|verify} messages.
-             * @function encode
-             * @memberof sign.LedPosition
-             * @static
-             * @param {sign.ILedPosition} message LedPosition message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            LedPosition.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
-                return writer;
-            };
-    
-            /**
-             * Encodes the specified LedPosition message, length delimited. Does not implicitly {@link sign.LedPosition.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof sign.LedPosition
-             * @static
-             * @param {sign.ILedPosition} message LedPosition message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            LedPosition.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-    
-            /**
-             * Decodes a LedPosition message from the specified reader or buffer.
-             * @function decode
-             * @memberof sign.LedPosition
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {sign.LedPosition} LedPosition
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            LedPosition.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.sign.LedPosition();
-                while (reader.pos < end) {
-                    var tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.x = reader.uint32();
-                        break;
-                    case 2:
-                        message.y = reader.uint32();
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                if (!message.hasOwnProperty("x"))
-                    throw $util.ProtocolError("missing required 'x'", { instance: message });
-                if (!message.hasOwnProperty("y"))
-                    throw $util.ProtocolError("missing required 'y'", { instance: message });
-                return message;
-            };
-    
-            /**
-             * Decodes a LedPosition message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof sign.LedPosition
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {sign.LedPosition} LedPosition
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            LedPosition.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-    
-            /**
-             * Verifies a LedPosition message.
-             * @function verify
-             * @memberof sign.LedPosition
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            LedPosition.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (!$util.isInteger(message.x))
-                    return "x: integer expected";
-                if (!$util.isInteger(message.y))
-                    return "y: integer expected";
-                return null;
-            };
-    
-            /**
-             * Creates a LedPosition message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof sign.LedPosition
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {sign.LedPosition} LedPosition
-             */
-            LedPosition.fromObject = function fromObject(object) {
-                if (object instanceof $root.sign.LedPosition)
-                    return object;
-                var message = new $root.sign.LedPosition();
-                if (object.x != null)
-                    message.x = object.x >>> 0;
-                if (object.y != null)
-                    message.y = object.y >>> 0;
-                return message;
-            };
-    
-            /**
-             * Creates a plain object from a LedPosition message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof sign.LedPosition
-             * @static
-             * @param {sign.LedPosition} message LedPosition
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            LedPosition.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                var object = {};
-                if (options.defaults) {
-                    object.x = 97;
-                    object.y = 0;
-                }
-                if (message.x != null && message.hasOwnProperty("x"))
-                    object.x = message.x;
-                if (message.y != null && message.hasOwnProperty("y"))
-                    object.y = message.y;
-                return object;
-            };
-    
-            /**
-             * Converts this LedPosition to JSON.
-             * @function toJSON
-             * @memberof sign.LedPosition
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            LedPosition.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-    
-            return LedPosition;
-        })();
-    
         sign.LedConfig = (function() {
     
             /**
              * Properties of a LedConfig.
              * @memberof sign
              * @interface ILedConfig
-             * @property {sign.ILedPosition} position LedConfig position
-             * @property {boolean} enabled LedConfig enabled
-             * @property {number} duty LedConfig duty
+             * @property {sign.LedConfig.Mode} mode LedConfig mode
              * @property {sign.ILedColorConfig} colorConfig LedConfig colorConfig
+             * @property {number} pattern LedConfig pattern
              */
     
             /**
@@ -495,28 +284,12 @@
             }
     
             /**
-             * LedConfig position.
-             * @member {sign.ILedPosition} position
+             * LedConfig mode.
+             * @member {sign.LedConfig.Mode} mode
              * @memberof sign.LedConfig
              * @instance
              */
-            LedConfig.prototype.position = null;
-    
-            /**
-             * LedConfig enabled.
-             * @member {boolean} enabled
-             * @memberof sign.LedConfig
-             * @instance
-             */
-            LedConfig.prototype.enabled = false;
-    
-            /**
-             * LedConfig duty.
-             * @member {number} duty
-             * @memberof sign.LedConfig
-             * @instance
-             */
-            LedConfig.prototype.duty = 255;
+            LedConfig.prototype.mode = 0;
     
             /**
              * LedConfig colorConfig.
@@ -525,6 +298,14 @@
              * @instance
              */
             LedConfig.prototype.colorConfig = null;
+    
+            /**
+             * LedConfig pattern.
+             * @member {number} pattern
+             * @memberof sign.LedConfig
+             * @instance
+             */
+            LedConfig.prototype.pattern = 0;
     
             /**
              * Creates a new LedConfig instance using the specified properties.
@@ -550,10 +331,9 @@
             LedConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                $root.sign.LedPosition.encode(message.position, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.enabled);
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.duty);
-                $root.sign.LedColorConfig.encode(message.colorConfig, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.mode);
+                $root.sign.LedColorConfig.encode(message.colorConfig, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.pattern);
                 return writer;
             };
     
@@ -589,30 +369,25 @@
                     var tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.position = $root.sign.LedPosition.decode(reader, reader.uint32());
+                        message.mode = reader.int32();
                         break;
                     case 2:
-                        message.enabled = reader.bool();
+                        message.colorConfig = $root.sign.LedColorConfig.decode(reader, reader.uint32());
                         break;
                     case 3:
-                        message.duty = reader.uint32();
-                        break;
-                    case 4:
-                        message.colorConfig = $root.sign.LedColorConfig.decode(reader, reader.uint32());
+                        message.pattern = reader.uint32();
                         break;
                     default:
                         reader.skipType(tag & 7);
                         break;
                     }
                 }
-                if (!message.hasOwnProperty("position"))
-                    throw $util.ProtocolError("missing required 'position'", { instance: message });
-                if (!message.hasOwnProperty("enabled"))
-                    throw $util.ProtocolError("missing required 'enabled'", { instance: message });
-                if (!message.hasOwnProperty("duty"))
-                    throw $util.ProtocolError("missing required 'duty'", { instance: message });
+                if (!message.hasOwnProperty("mode"))
+                    throw $util.ProtocolError("missing required 'mode'", { instance: message });
                 if (!message.hasOwnProperty("colorConfig"))
                     throw $util.ProtocolError("missing required 'colorConfig'", { instance: message });
+                if (!message.hasOwnProperty("pattern"))
+                    throw $util.ProtocolError("missing required 'pattern'", { instance: message });
                 return message;
             };
     
@@ -643,20 +418,20 @@
             LedConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                {
-                    var error = $root.sign.LedPosition.verify(message.position);
-                    if (error)
-                        return "position." + error;
+                switch (message.mode) {
+                default:
+                    return "mode: enum value expected";
+                case 0:
+                case 1:
+                    break;
                 }
-                if (typeof message.enabled !== "boolean")
-                    return "enabled: boolean expected";
-                if (!$util.isInteger(message.duty))
-                    return "duty: integer expected";
                 {
                     var error = $root.sign.LedColorConfig.verify(message.colorConfig);
                     if (error)
                         return "colorConfig." + error;
                 }
+                if (!$util.isInteger(message.pattern))
+                    return "pattern: integer expected";
                 return null;
             };
     
@@ -672,20 +447,23 @@
                 if (object instanceof $root.sign.LedConfig)
                     return object;
                 var message = new $root.sign.LedConfig();
-                if (object.position != null) {
-                    if (typeof object.position !== "object")
-                        throw TypeError(".sign.LedConfig.position: object expected");
-                    message.position = $root.sign.LedPosition.fromObject(object.position);
+                switch (object.mode) {
+                case "SINGLE_COLOR":
+                case 0:
+                    message.mode = 0;
+                    break;
+                case "PATTERN":
+                case 1:
+                    message.mode = 1;
+                    break;
                 }
-                if (object.enabled != null)
-                    message.enabled = Boolean(object.enabled);
-                if (object.duty != null)
-                    message.duty = object.duty >>> 0;
                 if (object.colorConfig != null) {
                     if (typeof object.colorConfig !== "object")
                         throw TypeError(".sign.LedConfig.colorConfig: object expected");
                     message.colorConfig = $root.sign.LedColorConfig.fromObject(object.colorConfig);
                 }
+                if (object.pattern != null)
+                    message.pattern = object.pattern >>> 0;
                 return message;
             };
     
@@ -703,19 +481,16 @@
                     options = {};
                 var object = {};
                 if (options.defaults) {
-                    object.position = null;
-                    object.enabled = false;
-                    object.duty = 255;
+                    object.mode = options.enums === String ? "SINGLE_COLOR" : 0;
                     object.colorConfig = null;
+                    object.pattern = 0;
                 }
-                if (message.position != null && message.hasOwnProperty("position"))
-                    object.position = $root.sign.LedPosition.toObject(message.position, options);
-                if (message.enabled != null && message.hasOwnProperty("enabled"))
-                    object.enabled = message.enabled;
-                if (message.duty != null && message.hasOwnProperty("duty"))
-                    object.duty = message.duty;
+                if (message.mode != null && message.hasOwnProperty("mode"))
+                    object.mode = options.enums === String ? $root.sign.LedConfig.Mode[message.mode] : message.mode;
                 if (message.colorConfig != null && message.hasOwnProperty("colorConfig"))
                     object.colorConfig = $root.sign.LedColorConfig.toObject(message.colorConfig, options);
+                if (message.pattern != null && message.hasOwnProperty("pattern"))
+                    object.pattern = message.pattern;
                 return object;
             };
     
@@ -730,261 +505,21 @@
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
             };
     
+            /**
+             * Mode enum.
+             * @name sign.LedConfig.Mode
+             * @enum {string}
+             * @property {number} SINGLE_COLOR=0 SINGLE_COLOR value
+             * @property {number} PATTERN=1 PATTERN value
+             */
+            LedConfig.Mode = (function() {
+                var valuesById = {}, values = Object.create(valuesById);
+                values[valuesById[0] = "SINGLE_COLOR"] = 0;
+                values[valuesById[1] = "PATTERN"] = 1;
+                return values;
+            })();
+    
             return LedConfig;
-        })();
-    
-        sign.LedFrame = (function() {
-    
-            /**
-             * Properties of a LedFrame.
-             * @memberof sign
-             * @interface ILedFrame
-             * @property {number} duration LedFrame duration
-             * @property {Array.<sign.ILedConfig>|null} [leds] LedFrame leds
-             * @property {number|null} [_unused] LedFrame _unused
-             */
-    
-            /**
-             * Constructs a new LedFrame.
-             * @memberof sign
-             * @classdesc Represents a LedFrame.
-             * @implements ILedFrame
-             * @constructor
-             * @param {sign.ILedFrame=} [properties] Properties to set
-             */
-            function LedFrame(properties) {
-                this.leds = [];
-                if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-    
-            /**
-             * LedFrame duration.
-             * @member {number} duration
-             * @memberof sign.LedFrame
-             * @instance
-             */
-            LedFrame.prototype.duration = 0;
-    
-            /**
-             * LedFrame leds.
-             * @member {Array.<sign.ILedConfig>} leds
-             * @memberof sign.LedFrame
-             * @instance
-             */
-            LedFrame.prototype.leds = $util.emptyArray;
-    
-            /**
-             * LedFrame _unused.
-             * @member {number} _unused
-             * @memberof sign.LedFrame
-             * @instance
-             */
-            LedFrame.prototype._unused = 0;
-    
-            /**
-             * Creates a new LedFrame instance using the specified properties.
-             * @function create
-             * @memberof sign.LedFrame
-             * @static
-             * @param {sign.ILedFrame=} [properties] Properties to set
-             * @returns {sign.LedFrame} LedFrame instance
-             */
-            LedFrame.create = function create(properties) {
-                return new LedFrame(properties);
-            };
-    
-            /**
-             * Encodes the specified LedFrame message. Does not implicitly {@link sign.LedFrame.verify|verify} messages.
-             * @function encode
-             * @memberof sign.LedFrame
-             * @static
-             * @param {sign.ILedFrame} message LedFrame message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            LedFrame.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.duration);
-                if (message.leds != null && message.leds.length)
-                    for (var i = 0; i < message.leds.length; ++i)
-                        $root.sign.LedConfig.encode(message.leds[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-                if (message._unused != null && message.hasOwnProperty("_unused"))
-                    writer.uint32(/* id 3, wireType 0 =*/24).uint32(message._unused);
-                return writer;
-            };
-    
-            /**
-             * Encodes the specified LedFrame message, length delimited. Does not implicitly {@link sign.LedFrame.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof sign.LedFrame
-             * @static
-             * @param {sign.ILedFrame} message LedFrame message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            LedFrame.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-    
-            /**
-             * Decodes a LedFrame message from the specified reader or buffer.
-             * @function decode
-             * @memberof sign.LedFrame
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {sign.LedFrame} LedFrame
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            LedFrame.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.sign.LedFrame();
-                while (reader.pos < end) {
-                    var tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.duration = reader.uint32();
-                        break;
-                    case 2:
-                        if (!(message.leds && message.leds.length))
-                            message.leds = [];
-                        message.leds.push($root.sign.LedConfig.decode(reader, reader.uint32()));
-                        break;
-                    case 3:
-                        message._unused = reader.uint32();
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                if (!message.hasOwnProperty("duration"))
-                    throw $util.ProtocolError("missing required 'duration'", { instance: message });
-                return message;
-            };
-    
-            /**
-             * Decodes a LedFrame message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof sign.LedFrame
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {sign.LedFrame} LedFrame
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            LedFrame.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-    
-            /**
-             * Verifies a LedFrame message.
-             * @function verify
-             * @memberof sign.LedFrame
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            LedFrame.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (!$util.isInteger(message.duration))
-                    return "duration: integer expected";
-                if (message.leds != null && message.hasOwnProperty("leds")) {
-                    if (!Array.isArray(message.leds))
-                        return "leds: array expected";
-                    for (var i = 0; i < message.leds.length; ++i) {
-                        var error = $root.sign.LedConfig.verify(message.leds[i]);
-                        if (error)
-                            return "leds." + error;
-                    }
-                }
-                if (message._unused != null && message.hasOwnProperty("_unused"))
-                    if (!$util.isInteger(message._unused))
-                        return "_unused: integer expected";
-                return null;
-            };
-    
-            /**
-             * Creates a LedFrame message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof sign.LedFrame
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {sign.LedFrame} LedFrame
-             */
-            LedFrame.fromObject = function fromObject(object) {
-                if (object instanceof $root.sign.LedFrame)
-                    return object;
-                var message = new $root.sign.LedFrame();
-                if (object.duration != null)
-                    message.duration = object.duration >>> 0;
-                if (object.leds) {
-                    if (!Array.isArray(object.leds))
-                        throw TypeError(".sign.LedFrame.leds: array expected");
-                    message.leds = [];
-                    for (var i = 0; i < object.leds.length; ++i) {
-                        if (typeof object.leds[i] !== "object")
-                            throw TypeError(".sign.LedFrame.leds: object expected");
-                        message.leds[i] = $root.sign.LedConfig.fromObject(object.leds[i]);
-                    }
-                }
-                if (object._unused != null)
-                    message._unused = object._unused >>> 0;
-                return message;
-            };
-    
-            /**
-             * Creates a plain object from a LedFrame message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof sign.LedFrame
-             * @static
-             * @param {sign.LedFrame} message LedFrame
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            LedFrame.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                var object = {};
-                if (options.arrays || options.defaults)
-                    object.leds = [];
-                if (options.defaults) {
-                    object.duration = 0;
-                    object._unused = 0;
-                }
-                if (message.duration != null && message.hasOwnProperty("duration"))
-                    object.duration = message.duration;
-                if (message.leds && message.leds.length) {
-                    object.leds = [];
-                    for (var j = 0; j < message.leds.length; ++j)
-                        object.leds[j] = $root.sign.LedConfig.toObject(message.leds[j], options);
-                }
-                if (message._unused != null && message.hasOwnProperty("_unused"))
-                    object._unused = message._unused;
-                return object;
-            };
-    
-            /**
-             * Converts this LedFrame to JSON.
-             * @function toJSON
-             * @memberof sign.LedFrame
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            LedFrame.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-    
-            return LedFrame;
         })();
     
         sign.Config = (function() {
@@ -993,12 +528,10 @@
              * Properties of a Config.
              * @memberof sign
              * @interface IConfig
-             * @property {boolean} animationEnabled Config animationEnabled
              * @property {boolean} motionEnabled Config motionEnabled
-             * @property {boolean} monogamyMode Config monogamyMode
              * @property {number} motionTimeout Config motionTimeout
              * @property {number} deviceBrightness Config deviceBrightness
-             * @property {Array.<sign.ILedFrame>|null} [frames] Config frames
+             * @property {sign.ILedConfig} ledConfig Config ledConfig
              * @property {Uint8Array|null} [_unused] Config _unused
              */
     
@@ -1011,20 +544,11 @@
              * @param {sign.IConfig=} [properties] Properties to set
              */
             function Config(properties) {
-                this.frames = [];
                 if (properties)
                     for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
-    
-            /**
-             * Config animationEnabled.
-             * @member {boolean} animationEnabled
-             * @memberof sign.Config
-             * @instance
-             */
-            Config.prototype.animationEnabled = false;
     
             /**
              * Config motionEnabled.
@@ -1033,14 +557,6 @@
              * @instance
              */
             Config.prototype.motionEnabled = true;
-    
-            /**
-             * Config monogamyMode.
-             * @member {boolean} monogamyMode
-             * @memberof sign.Config
-             * @instance
-             */
-            Config.prototype.monogamyMode = true;
     
             /**
              * Config motionTimeout.
@@ -1059,12 +575,12 @@
             Config.prototype.deviceBrightness = 100;
     
             /**
-             * Config frames.
-             * @member {Array.<sign.ILedFrame>} frames
+             * Config ledConfig.
+             * @member {sign.ILedConfig} ledConfig
              * @memberof sign.Config
              * @instance
              */
-            Config.prototype.frames = $util.emptyArray;
+            Config.prototype.ledConfig = null;
     
             /**
              * Config _unused.
@@ -1098,16 +614,12 @@
             Config.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.animationEnabled);
-                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.motionEnabled);
-                writer.uint32(/* id 3, wireType 0 =*/24).bool(message.monogamyMode);
-                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.motionTimeout);
-                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.deviceBrightness);
-                if (message.frames != null && message.frames.length)
-                    for (var i = 0; i < message.frames.length; ++i)
-                        $root.sign.LedFrame.encode(message.frames[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.motionEnabled);
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.motionTimeout);
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.deviceBrightness);
+                $root.sign.LedConfig.encode(message.ledConfig, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
                 if (message._unused != null && message.hasOwnProperty("_unused"))
-                    writer.uint32(/* id 7, wireType 2 =*/58).bytes(message._unused);
+                    writer.uint32(/* id 5, wireType 2 =*/42).bytes(message._unused);
                 return writer;
             };
     
@@ -1143,26 +655,18 @@
                     var tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.animationEnabled = reader.bool();
-                        break;
-                    case 2:
                         message.motionEnabled = reader.bool();
                         break;
-                    case 3:
-                        message.monogamyMode = reader.bool();
-                        break;
-                    case 4:
+                    case 2:
                         message.motionTimeout = reader.uint32();
                         break;
-                    case 5:
+                    case 3:
                         message.deviceBrightness = reader.uint32();
                         break;
-                    case 6:
-                        if (!(message.frames && message.frames.length))
-                            message.frames = [];
-                        message.frames.push($root.sign.LedFrame.decode(reader, reader.uint32()));
+                    case 4:
+                        message.ledConfig = $root.sign.LedConfig.decode(reader, reader.uint32());
                         break;
-                    case 7:
+                    case 5:
                         message._unused = reader.bytes();
                         break;
                     default:
@@ -1170,16 +674,14 @@
                         break;
                     }
                 }
-                if (!message.hasOwnProperty("animationEnabled"))
-                    throw $util.ProtocolError("missing required 'animationEnabled'", { instance: message });
                 if (!message.hasOwnProperty("motionEnabled"))
                     throw $util.ProtocolError("missing required 'motionEnabled'", { instance: message });
-                if (!message.hasOwnProperty("monogamyMode"))
-                    throw $util.ProtocolError("missing required 'monogamyMode'", { instance: message });
                 if (!message.hasOwnProperty("motionTimeout"))
                     throw $util.ProtocolError("missing required 'motionTimeout'", { instance: message });
                 if (!message.hasOwnProperty("deviceBrightness"))
                     throw $util.ProtocolError("missing required 'deviceBrightness'", { instance: message });
+                if (!message.hasOwnProperty("ledConfig"))
+                    throw $util.ProtocolError("missing required 'ledConfig'", { instance: message });
                 return message;
             };
     
@@ -1210,24 +712,16 @@
             Config.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (typeof message.animationEnabled !== "boolean")
-                    return "animationEnabled: boolean expected";
                 if (typeof message.motionEnabled !== "boolean")
                     return "motionEnabled: boolean expected";
-                if (typeof message.monogamyMode !== "boolean")
-                    return "monogamyMode: boolean expected";
                 if (!$util.isInteger(message.motionTimeout))
                     return "motionTimeout: integer expected";
                 if (!$util.isInteger(message.deviceBrightness))
                     return "deviceBrightness: integer expected";
-                if (message.frames != null && message.hasOwnProperty("frames")) {
-                    if (!Array.isArray(message.frames))
-                        return "frames: array expected";
-                    for (var i = 0; i < message.frames.length; ++i) {
-                        var error = $root.sign.LedFrame.verify(message.frames[i]);
-                        if (error)
-                            return "frames." + error;
-                    }
+                {
+                    var error = $root.sign.LedConfig.verify(message.ledConfig);
+                    if (error)
+                        return "ledConfig." + error;
                 }
                 if (message._unused != null && message.hasOwnProperty("_unused"))
                     if (!(message._unused && typeof message._unused.length === "number" || $util.isString(message._unused)))
@@ -1247,25 +741,16 @@
                 if (object instanceof $root.sign.Config)
                     return object;
                 var message = new $root.sign.Config();
-                if (object.animationEnabled != null)
-                    message.animationEnabled = Boolean(object.animationEnabled);
                 if (object.motionEnabled != null)
                     message.motionEnabled = Boolean(object.motionEnabled);
-                if (object.monogamyMode != null)
-                    message.monogamyMode = Boolean(object.monogamyMode);
                 if (object.motionTimeout != null)
                     message.motionTimeout = object.motionTimeout >>> 0;
                 if (object.deviceBrightness != null)
                     message.deviceBrightness = object.deviceBrightness >>> 0;
-                if (object.frames) {
-                    if (!Array.isArray(object.frames))
-                        throw TypeError(".sign.Config.frames: array expected");
-                    message.frames = [];
-                    for (var i = 0; i < object.frames.length; ++i) {
-                        if (typeof object.frames[i] !== "object")
-                            throw TypeError(".sign.Config.frames: object expected");
-                        message.frames[i] = $root.sign.LedFrame.fromObject(object.frames[i]);
-                    }
+                if (object.ledConfig != null) {
+                    if (typeof object.ledConfig !== "object")
+                        throw TypeError(".sign.Config.ledConfig: object expected");
+                    message.ledConfig = $root.sign.LedConfig.fromObject(object.ledConfig);
                 }
                 if (object._unused != null)
                     if (typeof object._unused === "string")
@@ -1288,31 +773,21 @@
                 if (!options)
                     options = {};
                 var object = {};
-                if (options.arrays || options.defaults)
-                    object.frames = [];
                 if (options.defaults) {
-                    object.animationEnabled = false;
                     object.motionEnabled = true;
-                    object.monogamyMode = true;
                     object.motionTimeout = 30;
                     object.deviceBrightness = 100;
+                    object.ledConfig = null;
                     object._unused = options.bytes === String ? "" : [];
                 }
-                if (message.animationEnabled != null && message.hasOwnProperty("animationEnabled"))
-                    object.animationEnabled = message.animationEnabled;
                 if (message.motionEnabled != null && message.hasOwnProperty("motionEnabled"))
                     object.motionEnabled = message.motionEnabled;
-                if (message.monogamyMode != null && message.hasOwnProperty("monogamyMode"))
-                    object.monogamyMode = message.monogamyMode;
                 if (message.motionTimeout != null && message.hasOwnProperty("motionTimeout"))
                     object.motionTimeout = message.motionTimeout;
                 if (message.deviceBrightness != null && message.hasOwnProperty("deviceBrightness"))
                     object.deviceBrightness = message.deviceBrightness;
-                if (message.frames && message.frames.length) {
-                    object.frames = [];
-                    for (var j = 0; j < message.frames.length; ++j)
-                        object.frames[j] = $root.sign.LedFrame.toObject(message.frames[j], options);
-                }
+                if (message.ledConfig != null && message.hasOwnProperty("ledConfig"))
+                    object.ledConfig = $root.sign.LedConfig.toObject(message.ledConfig, options);
                 if (message._unused != null && message.hasOwnProperty("_unused"))
                     object._unused = options.bytes === String ? $util.base64.encode(message._unused, 0, message._unused.length) : options.bytes === Array ? Array.prototype.slice.call(message._unused) : message._unused;
                 return object;
