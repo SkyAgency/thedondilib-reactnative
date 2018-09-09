@@ -1,13 +1,13 @@
 {
-  "motion_timeout": 30,
-  "motion_enabled": false,
-  "device_brightness": 100,
-  "led_config": {
+  "motionEnabled": true,
+  "motionTimeout": 15,
+  "deviceBrightness": 100,
+  "ledConfig": {
     "mode": 0,
     "pattern": 0,
-    "color_config": {
-      "red": 0,
-      "green": 255,
+    "colorConfig": {
+      "red": 255,
+      "green": 0,
       "blue": 0
     }
   }
