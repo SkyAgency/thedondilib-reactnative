@@ -505,6 +505,7 @@ class HomeScreen extends React.Component {
             height: Dimensions.get("window").width * 0.8,
             marginLeft: 25,
             marginRight: 25,
+            marginTop: 64,
             alignSelf: "center"
           }}
         />
