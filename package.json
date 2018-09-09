@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "babel-plugin-module-alias": "^1.6.0",
+    "base-64": "^0.1.0",
     "buffer": "^5.1.0",
     "protobufjs": "^6.8.6",
     "react": "16.4.1",

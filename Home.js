@@ -22,6 +22,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import SplashScreen from "react-native-splash-screen";
 import { ColorPicker } from "react-native-color-picker";
 
+var base64 = require("base-64");
 var buffer = require("buffer").Buffer;
 var tinycolor = require("tinycolor2");
 
@@ -104,24 +105,24 @@ class HomeScreen extends React.Component {
     if (char.value != null) {
       switch (char.uuid) {
         case manufacturerUUID:
-          if (atob(char.value) == "Circuit Dojo") {
-            temp.manufacturer = atob(char.value);
+          if (base64.decode(char.value) == "Circuit Dojo") {
+            temp.manufacturer = base64.decode(char.value);
           } else {
             return false;
           }
           break;
         case modelUUID:
-          temp.model = atob(char.value);
+          temp.model = base64.decode(char.value);
           break;
         case serialUUID:
           // TODO: Check local cache to see if the serial has
           // already been checked
           // TODO: if not, validate serial with web backend.=
           // TODO: save validated results to file.
-          temp.serial = atob(char.value);
+          temp.serial = base64.decode(char.value);
           break;
         case versionUUID:
-          temp.version = atob(char.value);
+          temp.version = base64.decode(char.value);
           break;
         default:
       }
@@ -278,7 +279,7 @@ class HomeScreen extends React.Component {
   }
 
   getColorAll() {
-    color = this.state.config.frames[0].leds[0].colorConfig;
+    color = this.state.config.ledConfig.colorConfig;
 
     console.log("getColorAll:" + JSON.stringify(color));
 
@@ -295,11 +296,11 @@ class HomeScreen extends React.Component {
     temp = this.state.config;
 
     // Modify the first frame
-    temp.frames[0].leds.forEach(led => {
-      led.colorConfig = { red: color.r, green: color.g, blue: color.b };
-      led.enabled = true;
-      led.duty = 100;
-    });
+    temp.ledConfig.colorConfig = {
+      red: color.r,
+      green: color.g,
+      blue: color.b
+    };
 
     // Set the state and save it to disk
     this.setState({ config: temp });
@@ -404,6 +405,8 @@ class HomeScreen extends React.Component {
 
   componentWillMount() {
     // console.log("componentWillMount");
+
+    // this.clearStateFile();
 
     this.getStateFromFile().then(state => {
       if (state) {
